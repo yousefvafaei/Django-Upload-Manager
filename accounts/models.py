@@ -21,3 +21,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     @property
     def is_staff(self):
         return self.is_admin
+
+
+class Profile(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=250)
+    last_name = models.CharField(max_length=250)
+    cover = models.ImageField(upload_to="accounts/", null=True, blank=True)
+
+    def __str__(self):
+        return self.user.email

@@ -22,7 +22,7 @@ class UserRegisterView(View):
             cd = form.cleaned_data
             CustomUser.objects.create_user(email=cd['email'], password=cd['password'])
             messages.success(request, 'you registered.', 'success')
-            return redirect('home:home')
+            return redirect('uploadmanager:home')
 
 
 class UserLogoutView(LoginRequiredMixin, View):
@@ -48,5 +48,5 @@ class UserLoginView(View):
             if user is not None:
                 login(request, user)
                 messages.success(request, 'you logged in successfully', 'info')
-                return redirect('home:home')
+                return redirect('uploadmanager:home')
             messages.error(request, 'phone or password is wrong!', 'warning')

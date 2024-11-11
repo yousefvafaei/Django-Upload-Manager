@@ -20,7 +20,7 @@ class UserRegisterView(View):
         form = self.form_class(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            CustomUser.objects.create_user(**cd)
+            CustomUser.objects.create_user(email=cd['email'], password=cd['password'])
             messages.success(request, 'you registered.', 'success')
             return redirect('home:home')
 

@@ -2,6 +2,7 @@ import logging
 import os
 import time
 
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.views import View
@@ -38,16 +39,13 @@ class HomeView(LoginRequiredMixin, View):
 
 class FileUploadView(LoginRequiredMixin, View):
     form_class = FileUploadForm
-    template_name = 'uploadmanager/file_upload.html'
+    template_name = 'uploadmanager/home.html'
 
-    def get(self, request, folder_slug=None, *args, **kwargs):
-        folder = None
-        if folder_slug:
-            folder = get_object_or_404(Folder, slug=folder_slug)
-        form = self.form_class()
-        return render(request, self.template_name, {'form': form, 'folder': folder})
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, {'form': self.form_class, })
 
-    def post(self, request, folder_slug=None, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
+        folder_slug = request.POST.get('parent_slug', None)
         folder = None
         if folder_slug:
             folder = get_object_or_404(Folder, slug=folder_slug)
@@ -55,18 +53,20 @@ class FileUploadView(LoginRequiredMixin, View):
         form = self.form_class(request.POST, request.FILES)
 
         if form.is_valid():
-            new_file = form.save(commit=False)
-            if folder:
-                new_file.folder = folder
-            new_file.user = request.user
-            new_file.save()
+            try:
+                new_file = form.save(commit=False)
+                if folder:
+                    new_file.folder = folder
+                new_file.user = request.user
+                new_file.save()
 
-            if folder:
-                return HttpResponseRedirect(f'/folder/{folder.slug}/')
-            else:
-                return HttpResponseRedirect('/')
-
-        return render(request, self.template_name, {'form': form, 'folder': folder})
+                if folder:
+                    return HttpResponseRedirect(f'/folder/{folder.slug}/')
+                else:
+                    return HttpResponseRedirect('/')
+            except ValidationError as e:
+                form.add_error(None, str(e))
+        return render(request, self.template_name, {'upload_form': form})
 
 
 class FileDetailView(View):
@@ -121,6 +121,7 @@ class FileDeleteView(LoginRequiredMixin, View):
 
 class FolderCreateView(LoginRequiredMixin, View):
     form_class = FolderCreateForm
+    upload_form = FileUploadForm
     template_name = 'uploadmanager/home.html'
 
     def post(self, request):
@@ -128,12 +129,22 @@ class FolderCreateView(LoginRequiredMixin, View):
         if form.is_valid():
             new_folder = form.save(commit=False)
             new_folder.user = request.user
+            parent_slug = request.POST.get("parent_slug")
+            if parent_slug:
+                try:
+                    parent_folder = Folder.objects.get(slug=parent_slug)
+                    new_folder.is_parent = parent_folder
+                except Folder.DoesNotExist:
+                    messages.error(request, "Parent folder does not exist.", "danger")
+                except ValidationError as e:
+                    form.add_error(None, str(e))
             new_folder.save()
             messages.success(request, 'Your Folder was created successfully!', 'success')
-            return redirect('uploadmanager:home')
 
-        folders = Folder.objects.all()
-        return render(request, self.template_name, {'form': form, 'folders': folders})
+            return redirect('uploadmanager:folder_detail', slug=new_folder.slug)
+
+        folders = Folder.objects.filter(user=request.user)
+        return render(request, self.template_name, {'form': form, 'folders': folders, 'upload_form': self.upload_form})
 
 
 class FolderDetailView(View):
@@ -142,7 +153,7 @@ class FolderDetailView(View):
     def get(self, request, slug, *args, **kwargs):
         folder = get_object_or_404(Folder, slug=slug)
         files = File.objects.filter(folder=folder)
-        subfolders = folder.subfolders.all()
+        subfolders = Folder.objects.filter(is_parent=folder)
         upload_form = FileUploadForm()
 
         context = {

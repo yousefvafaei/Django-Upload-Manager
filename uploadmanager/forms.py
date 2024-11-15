@@ -40,7 +40,7 @@ class FolderCreateForm(forms.ModelForm):
     """
     class Meta:
         model = Folder
-        fields = ['name',]
+        fields = ['name', 'is_parent']
 
 
 class FolderUpdateForm(forms.ModelForm):

@@ -1,0 +1,83 @@
+<style>
+    /* Custom Styling for Navbar */
+    .navbar {
+        background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-nav .nav-link {
+        font-weight: 500;
+        color: #ffffff !important; /* Set the default text color */
+        transition: color 0.3s ease, background-color 0.3s ease; /* Smooth transition */
+    }
+
+    /* Hover state */
+    .navbar-nav .nav-link:hover {
+        color: #ffffff !important; /* Keep text color white on hover */
+        background-color: rgba(255, 255, 255, 0.2) !important; /* Soft white background on hover */
+    }
+
+    /* Active state */
+    .navbar-nav .nav-link.active {
+        color: #2575fc !important; /* Keep active links highlighted */
+        background-color: white !important; /* Set background to white for active links */
+        border-radius: 5px;
+    }
+
+    /* Adjustments for Mobile and Small Screen Devices */
+    @media (max-width: 768px) {
+        .navbar-nav .nav-link {
+            color: #ffffff !important;
+            font-size: 1.1rem;
+        }
+    }
+
+    /* Flash Message Styling */
+    .alert-container .alert {
+        border-radius: 5px;
+    }
+
+    /* Additional Styling for Main Heading */
+    h1 {
+        font-family: 'Arial', sans-serif;
+        color: #333;
+    }
+
+    .container {
+        max-width: 1200px;
+    }
+</style>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'uploadmanager:home' %}">Upload Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}"
+                       href="{% url 'uploadmanager:home' %}">Home</a>
+                </li>
+
+                {% if request.user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/logout/' %}active{% endif %}"
+                           href="{% url 'accounts:user_logout' %}">Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/login/' %}active{% endif %}"
+                           href="{% url 'accounts:user_login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/register/' %}active{% endif %}"
+                           href="{% url 'accounts:user_register' %}">Register</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

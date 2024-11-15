@@ -1,0 +1,159 @@
+{% extends '_base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container mt-4">
+        <!-- Header displaying current folder name or 'Upload Manager' -->
+        <h1 class="my-4">
+            Upload Manager
+        </h1>
+        <!-- File Upload Form -->
+        <form action="
+                {% if folder %}{% url 'uploadmanager:file_upload_with_folder' folder_slug=folder.slug %}{% else %}{% url 'uploadmanager:file_upload' %}{% endif %}"
+              method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <label for="formFile" class="form-label">Choose File</label>
+                    {{ upload_form.file }}
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Upload File</button>
+                </div>
+            </div>
+        </form>
+
+
+        <div class="row text-center">
+            {% if upload_form.errors %}
+                {% for field in upload_form %}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-danger">{{ field.name|title }} - {{ error|escape }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            {% if upload_form.non_field_errors %}
+                {% for error in upload_form.non_field_errors %}
+                    <p class="text-danger">{{ error|escape }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Create Folder Section -->
+        <h1 class="my-4">Create New Folder</h1>
+
+        <!-- Folder Creation Form -->
+        <form method="post" action="{% url 'uploadmanager:folder_create' %}">
+            {% csrf_token %}
+            <div class="row mb-3">
+                <!-- Folder Name Input -->
+                <div class="col-md-6">
+                    <label for="folder_name" class="form-label">Folder Name</label>
+                    <input type="text" id="folder_name" name="name" class="form-control" required
+                           placeholder="Enter folder name">
+                    {% if form.name.errors %}
+                        <div class="text-danger">
+                            {{ form.name.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">Create Folder</button>
+        </form>
+
+        <br>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Library</h2>
+
+            <!-- Search Form -->
+            <form method="get" action="{% url 'uploadmanager:search' %}" class="mb-4 d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search files and folders">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Display Folders -->
+            {% for folder in folders %}
+                <tr>
+                    <td>
+                        <img src="{% static '/folder-thumbnail.png' %}" alt="Folder Thumbnail"
+                             style="width: 50px; height: 50px; margin-right: 10px;">
+                        <i class="bi bi-folder-fill" style="color: #ffcc00; margin-right: 5px;"></i>
+                        <a href="{% url 'uploadmanager:folder_detail' folder.slug %}">{{ folder.name }}</a>
+                    </td>
+                    <td>Folder</td>
+                    <td>-</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            {% for item in subfolders %}
+                                {{ item.name }}
+                            {% endfor %}
+                            <!-- Edit Folder Button -->
+                            <a class="btn btn-warning btn-sm"
+                               href="{% url 'uploadmanager:folder_update' folder.slug %}">Edit</a>
+                            <!-- Folder Delete Form -->
+                            <form method="post" action="{% url 'uploadmanager:folder_delete' folder.slug %}"
+                                  style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Are you sure you want to delete this folder?')">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No folders available.</td>
+                </tr>
+            {% endfor %}
+
+            <!-- Display Files -->
+            {% for file in files %}
+                <tr>
+                    <td>
+                        <img src="{{ file.thumbnail.url }}" alt="Thumbnail"
+                             style="width: 50px; height: 50px; margin-right: 10px;">
+                        <a href="{% url 'uploadmanager:file_detail' file.id %}">{{ file.name }}</a>
+                    </td>
+                    <td>{{ file.type }}</td>
+                    <td>{{ file.get_file_size_in_mb }} MB</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <!-- Edit File Button -->
+                            <a class="btn btn-warning btn-sm"
+                               href="{% url 'uploadmanager:file_update' file.id %}">Edit</a>
+                            <!-- File Delete Form -->
+                            <form method="post" action="{% url 'uploadmanager:file_delete' file.id %}"
+                                  style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Are you sure you want to delete this file?')">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No files available.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock content %}

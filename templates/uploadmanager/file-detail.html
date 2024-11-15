@@ -1,0 +1,44 @@
+{% extends '_base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <!-- File Details Heading -->
+        <h2 class="mb-4">File Details: {{ file.name }}</h2>
+
+        <!-- File Information -->
+        <div class="card shadow-sm p-4">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>Created on:</strong> {{ file.created_at|date:"F j, Y, g:i a" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>File size:</strong> {{ file.file.size|filesizeformat }}</p>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>File type:</strong> {{ file.type }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Folder:</strong>
+                        {% if file.folder %}
+                            {{ file.folder.name }}
+                        {% else %}
+                            No Folder
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Download Button -->
+            <div class="text-center">
+                <a href="{{ file.file.url }}" class="btn btn-success btn-lg" download>Download File</a>
+            </div>
+        </div>
+
+        <!-- Back Link -->
+        <div class="mt-4">
+            <a href="{% url 'uploadmanager:home' %}" class="btn btn-link">← Back to File List</a>
+        </div>
+    </div>
+{% endblock content %}

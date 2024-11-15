@@ -24,10 +24,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class Profile(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=250)
     last_name = models.CharField(max_length=250)
-    cover = models.ImageField(upload_to="accounts/", null=True, blank=True)
+    cover = models.ImageField(upload_to="accounts/profiles", null=True, blank=True)
 
     def __str__(self):
         return self.user.email

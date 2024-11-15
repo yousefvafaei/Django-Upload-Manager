@@ -2,9 +2,18 @@
 
 
 {% block content %}
-<form action="" method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="send">
-</form>
+<div class="container" style="max-width: 400px; margin-top: 100px;">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title text-center">ورود به حساب کاربری</h5>
+            <form action="" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    {{ form.as_p }}
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">ورود</button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock content %}

@@ -13,7 +13,7 @@ class UserRegisterView(View):
     template_name = 'accounts/register.html'
 
     def get(self, request):
-        form = self.form_class
+        form = self.form_class()
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
@@ -21,14 +21,17 @@ class UserRegisterView(View):
         if form.is_valid():
             cd = form.cleaned_data
             CustomUser.objects.create_user(email=cd['email'], password=cd['password'])
-            messages.success(request, 'you registered.', 'success')
+            messages.success(request, 'You have registered successfully!', extra_tags='success')
             return redirect('uploadmanager:home')
+        else:
+            messages.error(request, 'There was an error with your registration.', extra_tags='danger')
+        return render(request, self.template_name, {'form': form})
 
 
 class UserLogoutView(LoginRequiredMixin, View):
     def get(self, request):
         logout(request)
-        messages.success(request, 'you logged out successfully', 'success')
+        messages.success(request, 'You have logged out successfully.', extra_tags='success')
         return redirect('accounts:user_login')
 
 
@@ -37,7 +40,7 @@ class UserLoginView(View):
     template_name = 'accounts/login.html'
 
     def get(self, request):
-        form = self.form_class
+        form = self.form_class()
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
@@ -47,6 +50,11 @@ class UserLoginView(View):
             user = authenticate(request, email=cd['email'], password=cd['password'])
             if user is not None:
                 login(request, user)
-                messages.success(request, 'you logged in successfully', 'info')
+                messages.success(request, 'You have logged in successfully!', extra_tags='info')
                 return redirect('uploadmanager:home')
-            messages.error(request, 'phone or password is wrong!', 'warning')
+            else:
+                messages.error(request, 'Invalid email or password!', extra_tags='warning')
+        else:
+            messages.error(request, 'Please correct the errors below.', extra_tags='danger')
+
+        return render(request, self.template_name, {'form': form})

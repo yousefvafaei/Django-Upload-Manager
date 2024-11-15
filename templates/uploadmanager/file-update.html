@@ -1,0 +1,27 @@
+{% extends '_base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2>Update File: {{ file.name }}</h2>
+
+        <form method="POST" action="{% url 'uploadmanager:file_update' file.id %}">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="{{ form_update.name.id_for_label }}" class="form-label">File Name</label>
+                {{ form_update.name }}
+                {% if form_update.name.errors %}
+                    <div class="text-danger">
+                        {% for error in form_update.name.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- اگر فیلد دیگری مانند فایل یا توضیحات دارید، آن‌ها را در اینجا قرار دهید -->
+
+            <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+    </div>
+{% endblock content %}

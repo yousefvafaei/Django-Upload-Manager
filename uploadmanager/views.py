@@ -94,7 +94,12 @@ class FileUpdateView(LoginRequiredMixin, View):
             if request.user.is_authenticated and request.user == new_file.user:
                 new_file.save()
                 messages.success(request, 'File updated successfully!', 'success')
-                return redirect('uploadmanager:home')
+
+                if file.folder:
+                    parent_folder = file.folder
+                    return redirect('uploadmanager:folder_detail', slug=parent_folder.slug)
+                else:
+                    return redirect('uploadmanager:home')
             else:
                 messages.error(request, 'You do not have permission to edit this file.', 'danger')
 
@@ -141,7 +146,10 @@ class FolderCreateView(LoginRequiredMixin, View):
             new_folder.save()
             messages.success(request, 'Your Folder was created successfully!', 'success')
 
-            return redirect('uploadmanager:folder_detail', slug=new_folder.slug)
+            # return redirect('uploadmanager:home', slug=new_folder.slug)
+            if parent_slug:
+                return redirect('uploadmanager:folder_detail', slug=parent_slug)
+            return redirect('uploadmanager:home')
 
         folders = Folder.objects.filter(user=request.user)
         return render(request, self.template_name, {'form': form, 'folders': folders, 'upload_form': self.upload_form})

@@ -16,6 +16,23 @@ from uploadmanager.forms import FileUploadForm, FileUpdateForm, FolderCreateForm
 
 
 class HomeView(LoginRequiredMixin, View):
+    """
+    View for displaying the homepage with a list of files and folders for the logged-in user.
+
+    Handles:
+        - Displaying the user's files and folders.
+        - Providing forms to upload files and create new folders.
+
+    Template:
+        'uploadmanager/home.html'
+
+    Context:
+        - files: List of files without a parent folder.
+        - folders: List of top-level folders.
+        - upload_form: Form for uploading files.
+        - create_folder: Form for creating new folders.
+        - is_empty: Boolean flag indicating if no files or folders exist.
+    """
     template_name = 'uploadmanager/home.html'
 
     def get(self, request, *args, **kwargs):
@@ -39,6 +56,19 @@ class HomeView(LoginRequiredMixin, View):
 
 
 class FileUploadView(LoginRequiredMixin, View):
+    """
+    View for uploading a new file to the system, either in the root or inside a folder.
+
+    Handles:
+        - GET request: Displays the file upload form.
+        - POST request: Handles file upload and associates the file with the parent folder if provided.
+
+    Template:
+        'uploadmanager/home.html'
+
+    Context:
+        - form: The file upload form.
+    """
     form_class = FileUploadForm
     template_name = 'uploadmanager/home.html'
 
@@ -71,6 +101,18 @@ class FileUploadView(LoginRequiredMixin, View):
 
 
 class FileDetailView(View):
+    """
+    View for displaying the details of a specific file.
+
+    Handles:
+        - GET request: Displays the file's details like name, size, type, etc.
+
+    Template:
+        'uploadmanager/file-detail.html'
+
+    Context:
+        - file: The file instance to display.
+    """
     def get(self, request, *args, **kwargs):
         file_id = kwargs.get('file_id')
         file = get_object_or_404(File, id=file_id)
@@ -79,6 +121,20 @@ class FileDetailView(View):
 
 
 class FileUpdateView(LoginRequiredMixin, View):
+    """
+    View for updating the details of a file (e.g., name, description, etc.).
+
+    Handles:
+        - GET request: Displays the file update form.
+        - POST request: Updates the file's details and saves the changes.
+
+    Template:
+        'uploadmanager/file-update.html'
+
+    Context:
+        - form_update: The form for updating the file's details.
+        - file: The file instance being updated.
+    """
     form_class = FileUpdateForm
 
     def get(self, request, pk):
@@ -108,6 +164,15 @@ class FileUpdateView(LoginRequiredMixin, View):
 
 
 class FileDeleteView(LoginRequiredMixin, View):
+    """
+    View for deleting a file from the system.
+
+    Handles:
+        - POST request: Deletes the file and redirects to the appropriate page (folder or homepage).
+
+    Context:
+        - success message if the file was deleted.
+    """
     def post(self, request, pk):
         file = get_object_or_404(File, pk=pk)
 
@@ -126,6 +191,20 @@ class FileDeleteView(LoginRequiredMixin, View):
 
 
 class FolderCreateView(LoginRequiredMixin, View):
+    """
+    View for creating a new folder.
+
+    Handles:
+        - POST request: Creates a new folder, optionally inside a parent folder.
+
+    Template:
+        'uploadmanager/home.html'
+
+    Context:
+        - form: The folder creation form.
+        - folders: The list of existing folders.
+        - upload_form: The file upload form.
+    """
     form_class = FolderCreateForm
     upload_form = FileUploadForm
     template_name = 'uploadmanager/home.html'
@@ -157,6 +236,21 @@ class FolderCreateView(LoginRequiredMixin, View):
 
 
 class FolderDetailView(View):
+    """
+    View for displaying the details of a specific folder.
+
+    Handles:
+        - GET request: Displays the folder's contents (files and subfolders).
+
+    Template:
+        'uploadmanager/home.html'
+
+    Context:
+        - folder: The folder being viewed.
+        - files: The list of files inside the folder.
+        - subfolders: The list of subfolders inside the folder.
+        - upload_form: The file upload form.
+    """
     template_name = 'uploadmanager/home.html'
 
     def get(self, request, slug, *args, **kwargs):
@@ -176,6 +270,20 @@ class FolderDetailView(View):
 
 
 class FolderUpdateView(LoginRequiredMixin, View):
+    """
+    View for updating the details of an existing folder.
+
+    Handles:
+        - GET request: Displays the folder update form.
+        - POST request: Updates the folder's details.
+
+    Template:
+        'uploadmanager/folder-update.html'
+
+    Context:
+        - form_update: The form for updating the folder's details.
+        - folder: The folder instance being updated.
+    """
     form_class = FolderUpdateForm
 
     def get(self, request, slug):
@@ -201,6 +309,15 @@ class FolderUpdateView(LoginRequiredMixin, View):
 
 
 class FolderDeleteView(LoginRequiredMixin, View):
+    """
+    View for deleting a folder from the system.
+
+    Handles:
+        - POST request: Deletes the folder and its contents, and redirects to the appropriate parent folder or homepage.
+
+    Context:
+        - success message if the folder was deleted.
+    """
     def post(self, request, slug):
         folder = get_object_or_404(Folder, slug=slug)
 
@@ -219,6 +336,21 @@ class FolderDeleteView(LoginRequiredMixin, View):
 
 
 class SearchView(View):
+    """
+    View for searching files and folders based on a query string.
+
+    Handles:
+        - GET request: Searches for files and folders matching the search query.
+
+    Template:
+        'uploadmanager/search-list.html'
+
+    Context:
+        - search_title: Title of the search results.
+        - files: List of files that match the search query.
+        - folders: List of folders that match the search query.
+        - no_results: Boolean flag indicating if no results were found.
+    """
     def get(self, request, *args, **kwargs):
         search_query = self.request.GET.get("search", "").strip()
 

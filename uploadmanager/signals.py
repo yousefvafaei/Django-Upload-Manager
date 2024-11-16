@@ -7,6 +7,18 @@ from .models import File
 
 @receiver(post_delete, sender=File)
 def delete_file_on_model_delete(sender, instance, **kwargs):
+    """
+    Signal handler to delete the file and its thumbnail from the filesystem
+    when a File model instance is deleted.
+
+    Args:
+        sender (Model): The model class that sent the signal (File).
+        instance (File): The instance of the File model being deleted.
+        **kwargs: Additional keyword arguments.
+
+    This function attempts to delete the file and its associated thumbnail.
+    It will retry up to 5 times if the file is being used (i.e., a `PermissionError` occurs).
+    """
     if instance.file:
         file_path = instance.file.path
         attempts = 5

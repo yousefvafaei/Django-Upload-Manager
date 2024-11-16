@@ -22,6 +22,15 @@ THUMBNAIL_FOLDER = "media/thumbnails"
 
 # Custom validator for folder name field
 def validate_name(value):
+    """
+    Validates that the folder name does not contain invalid characters.
+
+    Args:
+        value (str): The folder name to be validated.
+
+    Raises:
+        ValidationError: If the folder name contains invalid characters.
+    """
     invalid_chars = r"[@#%$*&<>?|/:]"
     if any(char in value for char in invalid_chars):
         raise ValidationError(
@@ -30,6 +39,12 @@ def validate_name(value):
 
 
 class Folder(models.Model):
+    """
+    A folder model for organizing files.
+
+    Folders can have subfolders (is_parent) and are associated with a specific user.
+    Each folder is uniquely identified by a combination of name and parent folder (if any).
+    """
     name = models.CharField(max_length=255, validators=[validate_name])
     slug = models.SlugField(max_length=255, unique=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='folders', on_delete=models.CASCADE)
@@ -41,7 +56,14 @@ class Folder(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        # Create slug from name if not set
+        """
+        Override save method to generate unique slugs and ensure no duplicate folder names
+        for the same user and parent folder.
+
+        Args:
+            *args: Additional arguments passed to save.
+            **kwargs: Additional keyword arguments passed to save.
+        """
         if not self.slug:
             self.slug = slugify(self.name)
 
@@ -62,21 +84,35 @@ class Folder(models.Model):
         super().save(*args, **kwargs)
 
     def get_nested_path(self):
-        """Return the full nested path with slugs for URL."""
-        path = [{"name": self.name, "slug": self.slug}]  # Start with current folder name and slug
+        """
+        Returns the full nested path of the folder, including all parent folders.
+
+        Returns:
+            list: A list of dictionaries containing folder names and slugs.
+        """
+        path = [{"name": self.name, "slug": self.slug}]
         parent = self.is_parent
 
         while parent:
-            path.insert(0, {"name": parent.name, "slug": parent.slug})  # Insert parent folder name and slug
-            parent = parent.is_parent  # Move to the next parent folder
+            path.insert(0, {"name": parent.name, "slug": parent.slug})
+            parent = parent.is_parent
 
-        return path  # Return list of folder names and slugs
+        return path
 
     class Meta:
         unique_together = ("name", "is_parent", "user")
 
 
 def validate_file_type(value):
+    """
+    Validates the MIME type of a file to ensure it is an accepted image or video format.
+
+    Args:
+        value (File): The file to be validated.
+
+    Raises:
+        ValidationError: If the file type is not an accepted image or video type.
+    """
     valid_mime_types = {
         "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp", "image/tiff",
         "video/mp4", "video/mkv", "video/wmv", "video/mov", "video/avi", "video/mpeg",
@@ -90,6 +126,15 @@ def validate_file_type(value):
 
 
 def validate_file_size(value):
+    """
+    Validates the file size for both images and other file types.
+
+    Args:
+        value (File): The file to be validated.
+
+    Raises:
+        ValidationError: If the file size exceeds the allowed limit.
+    """
     mime_type, _ = mimetypes.guess_type(value.name)
 
     if mime_type and mime_type.startswith("image"):
@@ -103,6 +148,12 @@ def validate_file_size(value):
 
 
 class File(models.Model):
+    """
+    A file model for storing user files such as images and videos.
+
+    Each file is associated with a specific folder and user, and includes information such as file size,
+    type, and a thumbnail if applicable.
+    """
     FILE_TYPE_CHOICE = (
         ('img', 'Image'),
         ('vid', 'Video')
@@ -122,6 +173,14 @@ class File(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        """
+        Override save method to assign file name, size, and type.
+        Also, it generates a thumbnail for images and videos if not already present.
+
+        Args:
+            *args: Additional arguments passed to save.
+            **kwargs: Additional keyword arguments passed to save.
+        """
         self.name = self.name or os.path.basename(self.file.name)
         self.size = self.size or self.file.size
         self.type = self.type or self._choose_file_type()
@@ -132,6 +191,15 @@ class File(models.Model):
             self._create_thumbnail()
 
     def _choose_file_type(self):
+        """
+        Determines the file type (image or video) based on the file's MIME type.
+
+        Returns:
+            str: 'image' if MIME type starts with 'image', 'video' otherwise.
+
+        Raises:
+            ValidationError: If the file is of an unsupported type.
+        """
         mime_type, _ = mimetypes.guess_type(self.file.name)
         if mime_type:
             return "image" if mime_type.startswith("image") else "video"
@@ -143,6 +211,11 @@ class File(models.Model):
         return round(size_in_mb, 2)  # Round to 2 decimal places
 
     def _create_thumbnail(self):
+        """
+        Creates a thumbnail for the file, either from an image or video.
+
+        This method creates a thumbnail image for image files and video files.
+        """
         os.makedirs(THUMBNAIL_FOLDER, exist_ok=True)
         mime_type, _ = mimetypes.guess_type(self.file.name)
 
@@ -152,6 +225,12 @@ class File(models.Model):
             self._create_video_thumbnail()
 
     def _create_image_thumbnail(self):
+        """
+        Creates a thumbnail for image files.
+
+        This method generates a 100x100 thumbnail for an image file and saves it.
+        If the thumbnail creation fails, a default thumbnail is used.
+        """
         try:
             image = Image.open(self.file)
             image.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
@@ -167,6 +246,12 @@ class File(models.Model):
             self.save()
 
     def _create_video_thumbnail(self):
+        """
+        Creates a thumbnail for video files.
+
+        This method generates a 100x100 thumbnail by extracting a frame from the video
+        at the 1-second mark and saves it as an image.
+        """
         try:
             file_path = self.file.path
             thumbnail_filename = os.path.join(THUMBNAIL_FOLDER, os.path.basename(self.file.name) + ".jpg")

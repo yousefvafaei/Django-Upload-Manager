@@ -1,15 +1,9 @@
-import logging
-import os
-import time
-
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
 
 from .models import Folder, File
 from uploadmanager.forms import FileUploadForm, FileUpdateForm, FolderCreateForm, FolderUpdateForm
@@ -113,6 +107,7 @@ class FileDetailView(View):
     Context:
         - file: The file instance to display.
     """
+
     def get(self, request, *args, **kwargs):
         file_id = kwargs.get('file_id')
         file = get_object_or_404(File, id=file_id)
@@ -173,6 +168,7 @@ class FileDeleteView(LoginRequiredMixin, View):
     Context:
         - success message if the file was deleted.
     """
+
     def post(self, request, pk):
         file = get_object_or_404(File, pk=pk)
 
@@ -318,6 +314,7 @@ class FolderDeleteView(LoginRequiredMixin, View):
     Context:
         - success message if the folder was deleted.
     """
+
     def post(self, request, slug):
         folder = get_object_or_404(Folder, slug=slug)
 
@@ -351,6 +348,7 @@ class SearchView(View):
         - folders: List of folders that match the search query.
         - no_results: Boolean flag indicating if no results were found.
     """
+
     def get(self, request, *args, **kwargs):
         search_query = self.request.GET.get("search", "").strip()
 

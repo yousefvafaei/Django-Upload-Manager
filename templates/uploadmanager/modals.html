@@ -1,0 +1,45 @@
+    <div class="modal fade" id="fileDeleteModal" tabindex="-1" aria-labelledby="fileDeleteModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fileDeleteModalLabel">Confirm File Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete the file <strong id="fileModalItemName"></strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="fileDeleteModalForm" method="post" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var folderDeleteModal = document.getElementById('folderDeleteModal');
+            folderDeleteModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var itemName = button.getAttribute('data-item-name');
+                var itemUrl = button.getAttribute('data-item-url');
+
+                document.getElementById('folderModalItemName').textContent = itemName;
+                document.getElementById('folderDeleteModalForm').action = itemUrl;
+            });
+            
+            var fileDeleteModal = document.getElementById('fileDeleteModal');
+            fileDeleteModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var itemName = button.getAttribute('data-item-name');
+                var itemUrl = button.getAttribute('data-item-url');
+
+                document.getElementById('fileModalItemName').textContent = itemName;
+                document.getElementById('fileDeleteModalForm').action = itemUrl;
+            });
+        });
+    </script>

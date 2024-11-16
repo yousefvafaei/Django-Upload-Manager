@@ -63,10 +63,20 @@
         <br>
         <div class="card border border-3">
             <div class="card-body">
-                Home {% if folder %} / {{ folder.get_nested_path }} {% endif %}
+                {% if not folder %}
+                    <span>Home</span>
+                {% else %}
+                    <a href="{% url 'uploadmanager:home' %}">Home</a>
+                {% endif %}
+                
+                {% if folder %}
+                    {% for parent_folder in folder.get_nested_path %}
+                        > <a href="{% url 'uploadmanager:folder_detail' parent_folder.slug %}">{{ parent_folder.name }}</a>
+                    {% endfor %}
+                {% endif %}
             </div>
-
         </div>
+
         <br>
         <div class="d-flex justify-content-between align-items-center">
             <h2>Library</h2>
@@ -93,8 +103,11 @@
                 {% for folder in folders %}
                     <tr>
                         <td>
-                            <img src="{% static '/folder-thumbnail.png' %}" alt="Folder Thumbnail"
-                                 style="width: 50px; height: 50px; margin-right: 10px;">
+                            <!-- Folder Thumbnail with Link -->
+                            <a href="{% url 'uploadmanager:folder_detail' folder.slug %}">
+                                <img src="{% static '/folder-thumbnail.png' %}" alt="Folder Thumbnail"
+                                     style="width: 50px; height: 50px; margin-right: 10px;">
+                            </a>
                             <i class="bi bi-folder-fill" style="color: #ffcc00; margin-right: 5px;"></i>
                             <a href="{% url 'uploadmanager:folder_detail' folder.slug %}">{{ folder.name }}</a>
                         </td>
@@ -107,8 +120,11 @@
                                 <form method="post" action="{% url 'uploadmanager:folder_delete' folder.slug %}"
                                       style="margin: 0;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger btn-sm"
-                                            onclick="return confirm('Are you sure you want to delete this folder?')">
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#folderDeleteModal"
+                                            data-item-name="{{ folder.name }}"
+                                            data-item-url="{% url 'uploadmanager:folder_delete' folder.slug %}">
                                         Delete
                                     </button>
                                 </form>
@@ -121,8 +137,11 @@
                 {% for subfolder in subfolders %}
                     <tr>
                         <td>
-                            <img src="{% static '/folder-thumbnail.png' %}" alt="Folder Thumbnail"
-                                 style="width: 50px; height: 50px; margin-right: 10px;">
+                            <!-- Subfolder Thumbnail with Link -->
+                            <a href="{% url 'uploadmanager:folder_detail' subfolder.slug %}">
+                                <img src="{% static '/folder-thumbnail.png' %}" alt="Folder Thumbnail"
+                                     style="width: 50px; height: 50px; margin-right: 10px;">
+                            </a>
                             <i class="bi bi-folder-fill" style="color: #ffcc00; margin-right: 5px;"></i>
                             <a href="{% url 'uploadmanager:folder_detail' subfolder.slug %}">{{ subfolder.name }}</a>
                         </td>
@@ -135,8 +154,11 @@
                                 <form method="post" action="{% url 'uploadmanager:folder_delete' subfolder.slug %}"
                                       style="margin: 0;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger btn-sm"
-                                            onclick="return confirm('Are you sure you want to delete this subfolder?')">
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#folderDeleteModal"
+                                            data-item-name="{{ subfolder.name }}"
+                                            data-item-url="{% url 'uploadmanager:folder_delete' subfolder.slug %}">
                                         Delete
                                     </button>
                                 </form>
@@ -149,8 +171,11 @@
                 {% for file in files %}
                     <tr>
                         <td>
-                            <img src="{{ file.thumbnail.url }}" alt="Thumbnail"
-                                 style="width: 50px; height: 50px; margin-right: 10px;">
+                            <!-- File Thumbnail with Link -->
+                            <a href="{% url 'uploadmanager:file_detail' file.id %}">
+                                <img src="{{ file.thumbnail.url }}" alt="Thumbnail"
+                                     style="width: 50px; height: 50px; margin-right: 10px;">
+                            </a>
                             <a href="{% url 'uploadmanager:file_detail' file.id %}">{{ file.name }}</a>
                         </td>
                         <td>{{ file.type }}</td>
@@ -162,8 +187,11 @@
                                 <form method="post" action="{% url 'uploadmanager:file_delete' file.id %}"
                                       style="margin: 0;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger btn-sm"
-                                            onclick="return confirm('Are you sure you want to delete this file?')">
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#fileDeleteModal"
+                                            data-item-name="{{ file.name }}"
+                                            data-item-url="{% url 'uploadmanager:file_delete' file.id %}">
                                         Delete
                                     </button>
                                 </form>
@@ -177,4 +205,6 @@
             <p class="text-center mt-4">Nothing here. The folder is empty.</p>
         {% endif %}
     </div>
+
+{% include 'uploadmanager/modals.html' %}
 {% endblock content %}

@@ -29,7 +29,10 @@
                     </p>
                 </div>
             </div>
-
+            <!-- Display Image if file type is image -->
+            <div class="text-center mb-4">
+                <img src="{{ file.file.url }}" alt="{{ file.name }}" class="img-fluid">
+            </div>
             <!-- Download Button -->
             <div class="text-center">
                 <a href="{{ file.file.url }}" class="btn btn-success btn-lg" download>Download File</a>

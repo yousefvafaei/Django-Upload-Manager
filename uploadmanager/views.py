@@ -9,6 +9,7 @@ from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 
 from .models import Folder, File
 from uploadmanager.forms import FileUploadForm, FileUpdateForm, FolderCreateForm, FolderUpdateForm
@@ -190,7 +191,10 @@ class FolderUpdateView(LoginRequiredMixin, View):
             if request.user.is_authenticated and request.user == new_folder.user:
                 new_folder.save()
                 messages.success(request, 'Folder updated successfully!', 'success')
-                return redirect('uploadmanager:home')
+                if folder.is_parent:
+                    return redirect('uploadmanager:folder_detail', slug=folder.is_parent.slug)
+                else:
+                    return redirect('uploadmanager:home')
             else:
                 messages.error(request, 'You do not have permission to edit this Folder.', 'danger')
         return render(request, "uploadmanager/folder-update.html", {'form_update': form, 'folder': folder})
@@ -201,17 +205,17 @@ class FolderDeleteView(LoginRequiredMixin, View):
         folder = get_object_or_404(Folder, slug=slug)
 
         if request.user.is_authenticated and request.user == folder.user:
-            files = File.objects.filter(folder=folder)
-            for file in files:
-                file.delete()
+            parent_folder = folder.is_parent
+            folder.delete()
+            messages.success(request, 'Folder deleted successfully.', 'success')
 
-            try:
-                folder.delete()
-                messages.success(request, 'Folder deleted successfully.', 'success')
-            except Exception as e:
-                messages.error(request, f'Error deleting folder: {e}', 'danger')
-
-        return redirect('uploadmanager:home')
+            if parent_folder:
+                return redirect('uploadmanager:folder_detail', slug=parent_folder.slug)
+            else:
+                return redirect('uploadmanager:home')
+        else:
+            messages.error(request, 'You do not have permission to delete this folder.', 'danger')
+            return redirect('uploadmanager:home')
 
 
 class SearchView(View):
@@ -221,13 +225,10 @@ class SearchView(View):
         files = File.objects.filter(
             user=request.user, name__icontains=search_query
         ).order_by("name")
-
         folders = Folder.objects.filter(
             user=request.user, name__icontains=search_query
         ).order_by("name")
-
         search_title = f'Search results for: "{search_query}"' if search_query else "Search results"
-
         no_results = not files.exists() and not folders.exists()
         if no_results:
             messages.info(request, "No results found.", "info")

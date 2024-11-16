@@ -62,10 +62,15 @@ class Folder(models.Model):
         super().save(*args, **kwargs)
 
     def get_nested_path(self):
-        """Return the full nested path of the folder."""
-        if self.is_parent:
-            return f"{self.is_parent.get_nested_path()} / {self.name}"
-        return self.name
+        """Return the full nested path with slugs for URL."""
+        path = [{"name": self.name, "slug": self.slug}]  # Start with current folder name and slug
+        parent = self.is_parent
+
+        while parent:
+            path.insert(0, {"name": parent.name, "slug": parent.slug})  # Insert parent folder name and slug
+            parent = parent.is_parent  # Move to the next parent folder
+
+        return path  # Return list of folder names and slugs
 
     class Meta:
         unique_together = ("name", "is_parent", "user")

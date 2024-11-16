@@ -87,7 +87,7 @@ DATABASES = {
         'NAME': env('DB_NAME'),
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSWORD'),
-        'HOST': 'localhost',
+        'HOST': 'db',  # docker-compose database service name
         'PORT': '5432',
 
     }

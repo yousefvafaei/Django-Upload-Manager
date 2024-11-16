@@ -7,6 +7,12 @@ from .forms import CustomUserChangeForm, CustomUserCreationForm
 
 
 class CustomUserAdmin(BaseUserAdmin):
+    """
+    Custom admin interface for managing CustomUser model in Django admin.
+
+    This admin class allows the management of the CustomUser model with additional
+    fields for user permissions and management options.
+    """
     form = CustomUserChangeForm
     add_form = CustomUserCreationForm
 
@@ -29,6 +35,17 @@ class CustomUserAdmin(BaseUserAdmin):
     filter_horizontal = ('groups', 'user_permissions')
 
     def get_form(self, request, obj=None, **kwargs):
+        """
+        Override the get_form method to disable the 'is_superuser' field for non-superusers.
+
+        Args:
+            request (HttpRequest): The request object.
+            obj (CustomUser, optional): The user object being edited, if any.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            form: The form instance with the 'is_superuser' field disabled for non-superusers.
+        """
         form = super().get_form(request, obj, **kwargs)
         is_superuser = request.user.is_superuser
         if not is_superuser:

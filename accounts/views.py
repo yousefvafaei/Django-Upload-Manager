@@ -9,6 +9,20 @@ from .models import CustomUser
 
 
 class UserRegisterView(View):
+    """
+    View for user registration.
+
+    Handles the rendering of the registration form and processing the form submission.
+    If the form is valid, a new user is created and a success message is shown.
+
+    Attributes:
+        form_class (Form): The form class used for user registration.
+        template_name (str): The template used to render the registration page.
+
+    Methods:
+        get(request): Renders the registration page with an empty form.
+        post(request): Processes the form submission to register a new user.
+    """
     form_class = UserRegistrationForm
     template_name = 'accounts/register.html'
 
@@ -29,6 +43,14 @@ class UserRegisterView(View):
 
 
 class UserLogoutView(LoginRequiredMixin, View):
+    """
+    View to handle user logout.
+
+    This view logs the user out and redirects them to the login page.
+
+    Methods:
+        get(request): Logs the user out and redirects to the login page.
+    """
     def get(self, request):
         logout(request)
         messages.success(request, 'You have logged out successfully.', extra_tags='success')
@@ -36,6 +58,20 @@ class UserLogoutView(LoginRequiredMixin, View):
 
 
 class UserLoginView(View):
+    """
+    View for user login.
+
+    Handles the rendering of the login form and processing the form submission.
+    If the form is valid, the user is authenticated and logged in.
+
+    Attributes:
+        form_class (Form): The form class used for user login.
+        template_name (str): The template used to render the login page.
+
+    Methods:
+        get(request): Renders the login page with an empty form.
+        post(request): Processes the form submission to log the user in.
+    """
     form_class = UserLoginForm
     template_name = 'accounts/login.html'
 

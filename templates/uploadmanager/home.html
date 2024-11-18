@@ -186,7 +186,7 @@
                             <a href="{% url 'uploadmanager:file_detail' file.id %}">{{ file.name }}</a>
                         </td>
                         <td>{{ file.type }}</td>
-                        <td>{{ file.get_file_size_in_mb }} MB</td>
+                        <td>{{ file.get_file_size }}</td>
                         <td>
                             <div class="d-flex gap-2">
                                 <a class="btn btn-warning btn-sm"

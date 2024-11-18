@@ -116,7 +116,6 @@ class FileUploadView(LoginRequiredMixin, View):
         )
 
 
-
 class FileDetailView(View):
     """
     View for displaying the details of a specific file.

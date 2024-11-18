@@ -202,6 +202,17 @@ class File(models.Model):
         else:
             raise ValidationError(f"Invalid file type: {mime_type}")
 
+    def get_file_size(self):
+        """
+        Returns the size of the file in a human-readable format.
+        """
+        size = self.size or self.file.size
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024.0:
+                return f"{size:.2f} {unit}"
+            size /= 1024.0
+        return f"{size:.2f} PB"
+
     def _create_thumbnail(self):
         """
         Creates a thumbnail for the file, either from an image or video.

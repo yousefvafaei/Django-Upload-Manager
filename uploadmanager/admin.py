@@ -20,7 +20,7 @@ class FileAdmin(admin.ModelAdmin):
         """
         return f"{obj.size / (1024 * 1024):.2f} MB"
 
-    get_size_in_mb.short_description = 'Size (MB)'
+    get_size_in_mb.short_description = 'Size'
 
     def get_folder(self, obj):
         """

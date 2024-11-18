@@ -51,7 +51,7 @@ class HomeView(LoginRequiredMixin, View):
 
 class FileUploadView(LoginRequiredMixin, View):
     """
-    View for uploading a new file to the system, either in the root or inside a folder.
+    View for uploading a new file to the system, either in the Home or inside a folder.
 
     Handles:
         - GET request: Displays the file upload form.
@@ -335,34 +335,45 @@ class FolderDeleteView(LoginRequiredMixin, View):
 class SearchView(View):
     """
     View for searching files and folders based on a query string.
-
-    Handles:
-        - GET request: Searches for files and folders matching the search query.
-
-    Template:
-        'uploadmanager/search-list.html'
-
-    Context:
-        - search_title: Title of the search results.
-        - files: List of files that match the search query.
-        - folders: List of folders that match the search query.
-        - no_results: Boolean flag indicating if no results were found.
     """
 
     def get(self, request, *args, **kwargs):
+        """
+        Handle GET requests to search for files and folders.
+
+        Retrieves the query from the request, searches for matching files and folders
+        owned by the user, and prepares the context for rendering the results.
+        """
         search_query = self.request.GET.get("search", "").strip()
 
+        # Filter files and folders based on the search query and user ownership
         files = File.objects.filter(
             user=request.user, name__icontains=search_query
         ).order_by("name")
         folders = Folder.objects.filter(
             user=request.user, name__icontains=search_query
         ).order_by("name")
-        search_title = f'Search results for: "{search_query}"' if search_query else "Search results"
-        no_results = not files.exists() and not folders.exists()
-        if no_results:
-            messages.info(request, "No results found.", "info")
 
+        # Build the full path for each folder, including parent folders
+        for folder in folders:
+            path = self.get_folder_path(folder)
+            folder.path = path  # Add the folder path to the search results
+
+        # Build the full path for each file based on its parent folder
+        for file in files:
+            path = self.get_folder_path(file.folder)  # Handle cases where the file might be in a folder
+            file.path = path  # Add the file path to the search results
+
+        # Prepare a title for the search results
+        search_title = f'Search results for: "{search_query}"' if search_query else "Search results"
+
+        # Check if no results were found
+        no_results = not files.exists() and not folders.exists()
+
+        if no_results:
+            messages.info(request, "No results found.", "info")  # Notify the user if nothing matches the search
+
+        # Render the search results page with relevant context
         context = {
             "search_title": search_title,
             "files": files,
@@ -371,3 +382,29 @@ class SearchView(View):
         }
 
         return render(request, "uploadmanager/search-list.html", context)
+
+    def get_folder_path(self, folder):
+        """
+        Recursively get the full path of a folder including all parent folders.
+
+        Args:
+            folder (Folder): The folder instance for which the path is to be determined.
+
+        Returns:
+            str: A string representing the folder path in the format "Parent / Subfolder / Folder".
+                If the folder is None, returns "Home" or another suitable indicator.
+        """
+        if not folder:
+            return "Home"  # Use "Home" or another suitable placeholder for top-level files
+
+        path_parts = [folder.name]
+        parent_folder = folder.is_parent
+
+        # Traverse up the hierarchy to build the full path
+        while parent_folder:
+            if not parent_folder.name:
+                break  # Exit the loop if the parent folder is invalid
+            path_parts.insert(0, parent_folder.name)  # Add the parent folder's name to the beginning of the path
+            parent_folder = parent_folder.is_parent  # Move up to the next parent folder
+
+        return " / ".join(path_parts)  # Combine all parts into a single path string

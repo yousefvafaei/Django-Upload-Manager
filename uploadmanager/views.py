@@ -85,13 +85,36 @@ class FileUploadView(LoginRequiredMixin, View):
                 new_file.user = request.user
                 new_file.save()
 
+                # Redirect to the parent folder or home page after successful upload
                 if folder:
                     return HttpResponseRedirect(f'/folder/{folder.slug}/')
-                else:
-                    return HttpResponseRedirect('/')
+                return HttpResponseRedirect('/')
             except ValidationError as e:
-                form.add_error(None, str(e))
-        return render(request, self.template_name, {'upload_form': form})
+                # Add error message for unsupported file type
+                messages.error(request, str(e), "danger")
+
+        # If the form is invalid or a ValidationError occurs, return to the folder page
+        if folder:
+            return render(
+                request,
+                self.template_name,
+                {
+                    'upload_form': form,
+                    'files': File.objects.filter(folder=folder),
+                    'subfolders': Folder.objects.filter(is_parent=folder),
+                    'folder': folder,
+                },
+            )
+        return render(
+            request,
+            self.template_name,
+            {
+                'upload_form': form,
+                'files': File.objects.filter(user=request.user, folder__isnull=True),
+                'folders': Folder.objects.filter(user=request.user, is_parent=None),
+            },
+        )
+
 
 
 class FileDetailView(View):

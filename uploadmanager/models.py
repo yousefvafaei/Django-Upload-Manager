@@ -191,7 +191,6 @@ class File(models.Model):
         """
         Determines the file type (image or video) based on the file's MIME type.
         """
-        import magic
         mime_detector = magic.Magic(mime=True)
         mime_type = mime_detector.from_buffer(self.file.read())
         self.file.seek(0)  # Reset file pointer after reading

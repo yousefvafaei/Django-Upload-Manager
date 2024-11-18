@@ -71,7 +71,8 @@
 
                 {% if folder %}
                     {% for parent_folder in folder.get_nested_path %}
-                        > <a href="{% url 'uploadmanager:folder_detail' parent_folder.slug %}">{{ parent_folder.name }}</a>
+                        >
+                        <a href="{% url 'uploadmanager:folder_detail' parent_folder.slug %}">{{ parent_folder.name }}</a>
                     {% endfor %}
                 {% endif %}
             </div>
@@ -108,7 +109,7 @@
                                 <img src="{% static '/folder-thumbnail.png' %}" alt="Folder Thumbnail"
                                      style="width: 50px; height: 50px; margin-right: 10px;">
                             </a>
-{#                            <i class="bi bi-folder-fill" style="color: #ffcc00; margin-right: 5px;"></i>#}
+                            {#                            <i class="bi bi-folder-fill" style="color: #ffcc00; margin-right: 5px;"></i>#}
                             <a href="{% url 'uploadmanager:folder_detail' folder.slug %}">{{ folder.name }}</a>
                         </td>
                         <td>Folder</td>
@@ -142,7 +143,7 @@
                                 <img src="{% static '/folder-thumbnail.png' %}" alt="Folder Thumbnail"
                                      style="width: 50px; height: 50px; margin-right: 10px;">
                             </a>
-{#                            <i class="bi bi-folder-fill" style="color: #ffcc00; margin-right: 5px;"></i>#}
+                            {#                            <i class="bi bi-folder-fill" style="color: #ffcc00; margin-right: 5px;"></i>#}
                             <a href="{% url 'uploadmanager:folder_detail' subfolder.slug %}">{{ subfolder.name }}</a>
                         </td>
                         <td>Folder</td>
@@ -173,9 +174,15 @@
                         <td>
                             <!-- File Thumbnail with Link -->
                             <a href="{% url 'uploadmanager:file_detail' file.id %}">
-                                <img src="{{ file.thumbnail.url }}" alt="Thumbnail"
-                                     style="width: 50px; height: 50px; margin-right: 10px;">
+                                {% if file.thumbnail %}
+                                    <img src="{{ file.thumbnail.url }}" alt="Thumbnail"
+                                         style="width: 50px; height: 50px; margin-right: 10px;">
+                                {% else %}
+                                    <img src="{% static '/default-thumbnail.jpg' %}" alt="Default Thumbnail"
+                                         style="width: 50px; height: 50px; margin-right: 10px;">
+                                {% endif %}
                             </a>
+
                             <a href="{% url 'uploadmanager:file_detail' file.id %}">{{ file.name }}</a>
                         </td>
                         <td>{{ file.type }}</td>
@@ -206,5 +213,5 @@
         {% endif %}
     </div>
 
-{% include 'uploadmanager/modals.html' %}
+    {% include 'uploadmanager/modals.html' %}
 {% endblock content %}

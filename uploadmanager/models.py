@@ -11,11 +11,12 @@ from PIL import Image
 from moviepy.editor import VideoFileClip
 import mimetypes
 import logging
+import magic
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-DEFAULT_THUMBNAIL_PATH = "default_thumbnail.jpg"
+DEFAULT_THUMBNAIL_PATH = "default-thumbnail.jpg"
 THUMBNAIL_SIZE = (100, 100)
 THUMBNAIL_FOLDER = "media/thumbnails"
 
@@ -106,23 +107,19 @@ class Folder(models.Model):
 def validate_file_type(value):
     """
     Validates the MIME type of a file to ensure it is an accepted image or video format.
-
-    Args:
-        value (File): The file to be validated.
-
-    Raises:
-        ValidationError: If the file type is not an accepted image or video type.
     """
     valid_mime_types = {
-        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp", "image/tiff",
-        "video/mp4", "video/mkv", "video/wmv", "video/mov", "video/avi", "video/mpeg",
-        "video/quicktime", "video/x-msvideo", "video/x-ms-wmv"
+        "image/jpeg", "image/png", "image/gif", "image/bmp", "image/tiff",
+        "video/mp4", "video/mkv", "video/wmv", "video/mov", "video/avi",
+        "video/mpeg", "video/quicktime"
     }
 
-    mime_type, _ = mimetypes.guess_type(value.name)
+    mime_detector = magic.Magic(mime=True)
+    mime_type = mime_detector.from_buffer(value.read())
+    value.seek(0)
 
     if mime_type not in valid_mime_types:
-        raise ValidationError("Unsupported file type. Only videos and images are supported.")
+        raise ValidationError(f"Unsupported file type. Detected type: {mime_type}. Only videos and images are supported.")
 
 
 def validate_file_size(value):
@@ -193,22 +190,18 @@ class File(models.Model):
     def _choose_file_type(self):
         """
         Determines the file type (image or video) based on the file's MIME type.
-
-        Returns:
-            str: 'image' if MIME type starts with 'image', 'video' otherwise.
-
-        Raises:
-            ValidationError: If the file is of an unsupported type.
         """
-        mime_type, _ = mimetypes.guess_type(self.file.name)
-        if mime_type:
-            return "image" if mime_type.startswith("image") else "video"
-        raise ValidationError("Invalid file")
+        import magic
+        mime_detector = magic.Magic(mime=True)
+        mime_type = mime_detector.from_buffer(self.file.read())
+        self.file.seek(0)  # Reset file pointer after reading
 
-    def get_file_size_in_mb(self):
-        """Convert file size from bytes to MB with 2 decimal precision."""
-        size_in_mb = self.file.size / (1024 * 1024)  # Convert to MB
-        return round(size_in_mb, 2)  # Round to 2 decimal places
+        if mime_type.startswith("image"):
+            return "image"
+        elif mime_type.startswith("video"):
+            return "video"
+        else:
+            raise ValidationError(f"Invalid file type: {mime_type}")
 
     def _create_thumbnail(self):
         """

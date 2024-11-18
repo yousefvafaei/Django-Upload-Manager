@@ -1,45 +1,38 @@
 from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.views import View
-from .forms import UserRegistrationForm, UserLoginForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .models import CustomUser
+from .forms import CustomUserCreationForm, UserLoginForm
 
 
 class UserRegisterView(View):
     """
-    View for user registration.
-
-    Handles the rendering of the registration form and processing the form submission.
-    If the form is valid, a new user is created and a success message is shown.
-
-    Attributes:
-        form_class (Form): The form class used for user registration.
-        template_name (str): The template used to render the registration page.
-
-    Methods:
-        get(request): Renders the registration page with an empty form.
-        post(request): Processes the form submission to register a new user.
+    View for user registration using CustomUserCreationForm.
+    Handles form validation, user creation, and error/success messages.
     """
-    form_class = UserRegistrationForm
+    form_class = CustomUserCreationForm
     template_name = 'accounts/register.html'
 
     def get(self, request):
         form = self.form_class()
-        return render(request, self.template_name, {'form': form})
+        return self.render_form(form)
 
     def post(self, request):
         form = self.form_class(request.POST)
         if form.is_valid():
-            cd = form.cleaned_data
-            CustomUser.objects.create_user(email=cd['email'], password=cd['password'])
+            user = form.save()
+            login(request, user)  # Auto-login after successful registration
             messages.success(request, 'You have registered successfully!', extra_tags='success')
             return redirect('uploadmanager:home')
         else:
-            messages.error(request, 'There was an error with your registration.', extra_tags='danger')
-        return render(request, self.template_name, {'form': form})
+            messages.error(request, 'Registration failed. Please fix the errors below.', extra_tags='danger')
+        return self.render_form(form)
+
+    def render_form(self, form):
+        return render(self.request, self.template_name, {'form': form})
 
 
 class UserLogoutView(LoginRequiredMixin, View):
@@ -59,38 +52,32 @@ class UserLogoutView(LoginRequiredMixin, View):
 
 class UserLoginView(View):
     """
-    View for user login.
-
-    Handles the rendering of the login form and processing the form submission.
-    If the form is valid, the user is authenticated and logged in.
-
-    Attributes:
-        form_class (Form): The form class used for user login.
-        template_name (str): The template used to render the login page.
-
-    Methods:
-        get(request): Renders the login page with an empty form.
-        post(request): Processes the form submission to log the user in.
+    View for user login using UserLoginForm.
+    Handles form validation, user authentication, and success/error messages.
     """
     form_class = UserLoginForm
     template_name = 'accounts/login.html'
 
     def get(self, request):
         form = self.form_class()
-        return render(request, self.template_name, {'form': form})
+        return self.render_form(form)
 
     def post(self, request):
         form = self.form_class(request.POST)
         if form.is_valid():
-            cd = form.cleaned_data
-            user = authenticate(request, email=cd['email'], password=cd['password'])
-            if user is not None:
+            user = authenticate(
+                request,
+                email=form.cleaned_data['email'],
+                password=form.cleaned_data['password']
+            )
+            if user:
                 login(request, user)
-                messages.success(request, 'You have logged in successfully!', extra_tags='info')
+                messages.success(request, 'Logged in successfully!', extra_tags='info')
                 return redirect('uploadmanager:home')
-            else:
-                messages.error(request, 'Invalid email or password!', extra_tags='warning')
+            messages.error(request, 'Invalid email or password!', extra_tags='warning')
         else:
             messages.error(request, 'Please correct the errors below.', extra_tags='danger')
+        return self.render_form(form)
 
-        return render(request, self.template_name, {'form': form})
+    def render_form(self, form):
+        return render(self.request, self.template_name, {'form': form})

@@ -1,17 +1,53 @@
 {% extends '_base.html' %}
 
-
 {% block content %}
 <div class="container" style="max-width: 400px; margin-top: 100px;">
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title text-center">ایجاد حساب جدید</h5>
+            <h5 class="card-title text-center">Create a New Account</h5>
             <form action="" method="post">
                 {% csrf_token %}
-                <div class="form-group">
-                    {{ form.as_p }}
+
+                <!-- Email Field -->
+                <div class="form-group mb-3">
+                    <label for="{{ form.email.id_for_label }}">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="text-danger">
+                            {% for error in form.email.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">ثبت نام</button>
+
+                <!-- Password Field -->
+                <div class="form-group mb-3">
+                    <label for="{{ form.password1.id_for_label }}">Password</label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <div class="text-danger">
+                            {% for error in form.password1.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div class="form-group mb-3">
+                    <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <div class="text-danger">
+                            {% for error in form.password2.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Register</button>
             </form>
         </div>
     </div>

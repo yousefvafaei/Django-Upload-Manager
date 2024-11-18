@@ -32,6 +32,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def is_staff(self):
         return self.is_admin
 
+    @is_staff.setter
+    def is_staff(self, value):
+        self.is_admin = value
+        self.save()
+
 
 class Profile(models.Model):
     """

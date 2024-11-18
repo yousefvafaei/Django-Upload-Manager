@@ -27,11 +27,11 @@ A Dockerized File Management System built with Django that allows authenticated 
    ```env
    SECRET_KEY=your-secret-key
    DEBUG=True
-   DATABASE_NAME=your-database-name
-   DATABASE_USER=your-database-user
-   DATABASE_PASSWORD=your-database-password
-   DATABASE_HOST=db
-   DATABASE_PORT=5432
+   DB_NAME=your-database-name
+   DB_USER=your-database-user
+   DB_PASSWORD=your-database-password
+   DB_HOST=db
+   DB_PORT=5432
    ```
 
 3. Build and run the project using Docker Compose:

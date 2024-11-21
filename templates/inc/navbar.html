@@ -65,7 +65,7 @@
                 {% if request.user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/logout/' %}active{% endif %}"
-                           href="{% url 'accounts:user_logout' %}">Logout</a>
+                           href="{% url 'accounts:user_logout' %}">Logout {{ user.email }}</a>
                     </li>
                 {% else %}
                     <li class="nav-item">

@@ -213,44 +213,62 @@ class FolderCreateView(LoginRequiredMixin, View):
     View for creating a new folder.
 
     Handles:
-        - POST request: Creates a new folder, optionally inside a parent folder.
+        - POST request: Creates a new folder if the form is valid, and redirects to the appropriate folder or home page.
+        - If a folder with the same name already exists, an error message is displayed.
 
     Template:
         'uploadmanager/home.html'
 
     Context:
-        - form: The folder creation form.
-        - folders: The list of existing folders.
-        - upload_form: The file upload form.
+        - form: The folder creation form, possibly with errors.
+        - upload_form: The file upload form (remains the same across the view).
+        - folders: List of top-level folders, or an empty list if inside a subfolder.
+        - subfolders: List of subfolders if a parent folder exists.
+        - files: List of files in the current folder, if a parent folder exists.
+        - folder: The parent folder, if creating a subfolder.
     """
     form_class = FolderCreateForm
-    upload_form = FileUploadForm
     template_name = 'uploadmanager/home.html'
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
+        folder_slug = request.POST.get('parent_slug', None)
+        parent_folder = None
+        if folder_slug:
+            parent_folder = get_object_or_404(Folder, slug=folder_slug)
+
         form = self.form_class(request.POST)
+
         if form.is_valid():
-            new_folder = form.save(commit=False)
-            new_folder.user = request.user
-            parent_slug = request.POST.get("parent_slug")
-            if parent_slug:
-                try:
-                    parent_folder = Folder.objects.get(slug=parent_slug)
-                    new_folder.is_parent = parent_folder
-                except Folder.DoesNotExist:
-                    messages.error(request, "Parent folder does not exist.", "danger")
-                except ValidationError as e:
-                    form.add_error(None, str(e))
-            new_folder.save()
-            messages.success(request, 'Your Folder was created successfully!', 'success')
+            folder_name = form.cleaned_data['name']
 
-            # return redirect('uploadmanager:home', slug=new_folder.slug)
-            if parent_slug:
-                return redirect('uploadmanager:folder_detail', slug=parent_slug)
-            return redirect('uploadmanager:home')
+            if Folder.objects.filter(name=folder_name, is_parent=parent_folder, user=request.user).exists():
+                messages.error(request, f"A folder with the name '{folder_name}' already exists.")
+            else:
+                folder = form.save(commit=False)
+                folder.is_parent = parent_folder
+                folder.user = request.user
+                folder.save()
+                messages.success(request, f"Folder '{folder.name}' created successfully.")
 
-        folders = Folder.objects.filter(user=request.user)
-        return render(request, self.template_name, {'form': form, 'folders': folders, 'upload_form': self.upload_form})
+                if parent_folder:
+                    return redirect('uploadmanager:folder_detail', folder.slug)
+                else:
+                    return redirect('uploadmanager:home')
+
+        folders = Folder.objects.filter(user=request.user, is_parent=None) if not parent_folder else []
+        subfolders = Folder.objects.filter(is_parent=parent_folder) if parent_folder else []
+        files = File.objects.filter(folder=parent_folder) if parent_folder else []
+
+        context = {
+            'upload_form': FileUploadForm(),
+            'form': form,
+            'folder': parent_folder,
+            'folders': folders,
+            'subfolders': subfolders,
+            'files': files,
+        }
+
+        return render(request, self.template_name, context)
 
 
 class FolderDetailView(View):

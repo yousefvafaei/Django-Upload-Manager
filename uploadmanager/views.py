@@ -51,69 +51,63 @@ class HomeView(LoginRequiredMixin, View):
 
 class FileUploadView(LoginRequiredMixin, View):
     """
-    View for uploading a new file to the system, either in the Home or inside a folder.
+    Handles the file upload functionality for users.
 
-    Handles:
-        - GET request: Displays the file upload form.
-        - POST request: Handles file upload and associates the file with the parent folder if provided.
+    GET request:
+        - Displays the upload form and lists the user's files and folders.
 
-    Template:
-        'uploadmanager/home.html'
+    POST request:
+        - Handles the file upload, saving the file to the specified folder or root if no folder is selected.
 
-    Context:
-        - form: The file upload form.
+    Attributes:
+        form_class: The form used for file uploads (FileUploadForm).
+        template_name: The template for rendering the view ('uploadmanager/home.html').
+
     """
     form_class = FileUploadForm
     template_name = 'uploadmanager/home.html'
 
     def get(self, request, *args, **kwargs):
-        return render(request, self.template_name, {'form': self.form_class, })
+        context = {
+            'upload_form': self.form_class(),
+            'files': File.objects.filter(user=request.user, folder__isnull=True),
+            'folders': Folder.objects.filter(user=request.user, is_parent=None),
+        }
+        return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        folder_slug = request.POST.get('parent_slug', None)
-        folder = None
-        if folder_slug:
-            folder = get_object_or_404(Folder, slug=folder_slug)
+        """
+        Handles POST requests. Saves the uploaded file to the specified folder, or to the root folder if no folder is specified.
+
+        Context:
+            - 'upload_form': The file upload form with possible validation errors.
+            - 'files': List of files in the selected folder or the user's files.
+            - 'folders': List of folders in the selected folder or the user's folders.
+            - 'folder': The folder the file is being uploaded to.
+
+        Redirects:
+            - Redirects to the folder detail page if a folder is specified, or the home page if no folder is specified.
+        """
+        folder_slug = request.POST.get('parent_slug')
+        folder = get_object_or_404(Folder, slug=folder_slug) if folder_slug else None
 
         form = self.form_class(request.POST, request.FILES)
-
         if form.is_valid():
-            try:
-                new_file = form.save(commit=False)
-                if folder:
-                    new_file.folder = folder
-                new_file.user = request.user
-                new_file.save()
+            new_file = form.save(commit=False)
+            new_file.folder = folder
+            new_file.user = request.user
+            new_file.save()
+            return HttpResponseRedirect(f'/folder/{folder.slug}/' if folder else '/')
 
-                # Redirect to the parent folder or home page after successful upload
-                if folder:
-                    return HttpResponseRedirect(f'/folder/{folder.slug}/')
-                return HttpResponseRedirect('/')
-            except ValidationError as e:
-                # Add error message for unsupported file type
-                messages.error(request, str(e), "danger")
-
-        # If the form is invalid or a ValidationError occurs, return to the folder page
-        if folder:
-            return render(
-                request,
-                self.template_name,
-                {
-                    'upload_form': form,
-                    'files': File.objects.filter(folder=folder),
-                    'subfolders': Folder.objects.filter(is_parent=folder),
-                    'folder': folder,
-                },
-            )
-        return render(
-            request,
-            self.template_name,
-            {
-                'upload_form': form,
-                'files': File.objects.filter(user=request.user, folder__isnull=True),
-                'folders': Folder.objects.filter(user=request.user, is_parent=None),
-            },
-        )
+        context = {
+            'upload_form': form,
+            'files': File.objects.filter(folder=folder) if folder else File.objects.filter(user=request.user,
+                                                                                           folder__isnull=True),
+            'folders': Folder.objects.filter(is_parent=folder) if folder else Folder.objects.filter(user=request.user,
+                                                                                                    is_parent=None),
+            'folder': folder,
+        }
+        return render(request, self.template_name, context)
 
 
 class FileDetailView(View):
@@ -210,50 +204,48 @@ class FileDeleteView(LoginRequiredMixin, View):
 
 class FolderCreateView(LoginRequiredMixin, View):
     """
-    View for creating a new folder.
+    Handles the creation of new folders for the user.
 
-    Handles:
-        - POST request: Creates a new folder if the form is valid, and redirects to the appropriate folder or home page.
-        - If a folder with the same name already exists, an error message is displayed.
+    POST request:
+        - Creates a new folder, optionally within a parent folder, and redirects to the folder detail or home page.
 
-    Template:
-        'uploadmanager/home.html'
-
-    Context:
-        - form: The folder creation form, possibly with errors.
-        - upload_form: The file upload form (remains the same across the view).
-        - folders: List of top-level folders, or an empty list if inside a subfolder.
-        - subfolders: List of subfolders if a parent folder exists.
-        - files: List of files in the current folder, if a parent folder exists.
-        - folder: The parent folder, if creating a subfolder.
+    Attributes:
+        form_class: The form used for folder creation (FolderCreateForm).
+        template_name: The template for rendering the view ('uploadmanager/home.html').
     """
     form_class = FolderCreateForm
     template_name = 'uploadmanager/home.html'
 
     def post(self, request, *args, **kwargs):
-        folder_slug = request.POST.get('parent_slug', None)
-        parent_folder = None
-        if folder_slug:
-            parent_folder = get_object_or_404(Folder, slug=folder_slug)
+        """
+        Handles POST requests. Creates a new folder and assigns it to the parent folder if specified.
+
+        Context:
+            - 'upload_form': The file upload form.
+            - 'form': The folder creation form with potential validation errors.
+            - 'folder': The parent folder if a subfolder is being created.
+            - 'folders': List of top-level folders (if no parent folder is specified).
+            - 'subfolders': List of subfolders under the parent folder.
+            - 'files': List of files under the parent folder.
+
+        Redirects:
+            - Redirects to the folder detail page if a parent folder exists, or to the home page if no parent is selected.
+        """
+        parent_slug = request.POST.get('parent_slug', None)
+        parent_folder = get_object_or_404(Folder, slug=parent_slug) if parent_slug else None
 
         form = self.form_class(request.POST)
 
         if form.is_valid():
-            folder_name = form.cleaned_data['name']
+            new_folder = form.save(commit=False)
+            new_folder.user = request.user
+            new_folder.is_parent = parent_folder
+            new_folder.save()
 
-            if Folder.objects.filter(name=folder_name, is_parent=parent_folder, user=request.user).exists():
-                messages.error(request, f"A folder with the name '{folder_name}' already exists.")
-            else:
-                folder = form.save(commit=False)
-                folder.is_parent = parent_folder
-                folder.user = request.user
-                folder.save()
-                messages.success(request, f"Folder '{folder.name}' created successfully.")
+            messages.success(request, f"Folder '{new_folder.name}' created successfully.")
 
-                if parent_folder:
-                    return redirect('uploadmanager:folder_detail', folder.slug)
-                else:
-                    return redirect('uploadmanager:home')
+            return redirect('uploadmanager:folder_detail', slug=parent_slug) if parent_folder else redirect(
+                'uploadmanager:home')
 
         folders = Folder.objects.filter(user=request.user, is_parent=None) if not parent_folder else []
         subfolders = Folder.objects.filter(is_parent=parent_folder) if parent_folder else []
